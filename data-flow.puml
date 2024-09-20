@@ -1,0 +1,36 @@
+@startuml
+actor User
+participant "WebSocket client" as Client
+participant "WebSocket server (app)" as Server
+participant "Quiz Service (app)" as Service
+participant "Redis cache" as Cache
+participant "Database" as DB
+participant "Queue (RabbitMQ)" as Queue
+
+User -> Client: Join quiz (quizId)
+Client -> Server: Connect WebSocket (/submit-answer/{quizId})
+Server -> Service: Add user to quiz room (quizId)
+Service -> Cache: Cache user info
+Client -> Server: Request quiz start (quizId)
+Server -> Service: Start quiz
+Service -> Client: Send first question
+
+loop For each answer
+    User -> Client: Submit answer
+    Client -> Server: Send answer (/submit-answer/{quizId})
+    Server -> Service: Process answer (quizId, answer)
+    Service -> Cache: Update score in Redis
+    Cache -> Service: Return updated leaderboard
+    Service -> Server: Updated leaderboard
+    Server -> Client: Broadcast leaderboard update
+end
+
+Client -> Server: Notify quiz end (quizId)
+Server -> Service: End quiz (quizId)
+Service -> Cache: Fetch final leaderboard
+'Service -> DB: Save final results
+Service -> Server: Final leaderboard
+Server -> Client: Broadcast final leaderboard
+Server -> Queue: Send to queue (for post-processing)
+Queue -> Service: Handle post-processing (DB: Save final results)
+@enduml

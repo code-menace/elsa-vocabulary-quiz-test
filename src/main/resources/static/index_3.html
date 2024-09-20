@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Tester</title>
+</head>
+<body>
+<h2>WebSocket Test</h2>
+<div>
+    <label>WebSocket URL:</label>
+    <input type="text" id="ws-url" value="ws://localhost:8080/quiz-websocket">
+    <button onclick="connect()">Connect</button>
+</div>
+<div>
+    <label>Message to Send:</label>
+    <textarea id="message-to-send" rows="4" cols="50">
+        SEND
+destination:/app/submit-answer
+content-type:application/json
+
+{"username": "Username", "correct": true}
+^@
+    </textarea>
+    <button onclick="sendMessage()">Send Message</button>
+</div>
+<div>
+    <h3>Server Responses:</h3>
+    <div id="server-responses"></div>
+</div>
+
+<script>
+    let websocket;
+
+    function connect() {
+        const url = document.getElementById("ws-url").value;
+        websocket = new WebSocket(url);
+
+        websocket.onopen = function () {
+            appendToLog("Connected to WebSocket server at " + url);
+        };
+
+        websocket.onmessage = function (event) {
+            appendToLog("Message from server: " + event.data);
+        };
+
+        websocket.onclose = function () {
+            appendToLog("Connection closed");
+        };
+
+        websocket.onerror = function (error) {
+            appendToLog("Error: " + error.message);
+        };
+    }
+
+    function sendMessage() {
+        const message = document.getElementById("message-to-send").value;
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            websocket.send(message);
+            appendToLog("Message sent: " + message);
+        } else {
+            appendToLog("WebSocket is not connected.");
+        }
+    }
+
+    function appendToLog(message) {
+        const log = document.getElementById("server-responses");
+        const newMessage = document.createElement("p");
+        newMessage.textContent = message;
+        log.appendChild(newMessage);
+    }
+</script>
+</body>
+</html>

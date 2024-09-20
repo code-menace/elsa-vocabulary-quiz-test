@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz WebSocket Test</title>
+</head>
+<body>
+<h2>WebSocket Quiz Test</h2>
+<div>
+    <label>WebSocket URL:</label>
+    <input type="text" id="ws-url" value="http://localhost:8080/quiz-websocket">
+    <button onclick="connect()">Connect</button>
+</div>
+<div>
+    <label>Message to Send (JSON format):</label>
+    <textarea id="message-to-send" rows="4" cols="50">{"username": "user1", "quizId": "quiz1", "questionId": 1, "answer": "4"}</textarea>
+    <button onclick="sendMessage()">Send Message</button>
+</div>
+<div>
+    <h3>Server Responses:</h3>
+    <div id="server-responses"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    let stompClient;
+
+    function connect() {
+        const socketUrl = document.getElementById("ws-url").value;
+        const socket = new SockJS(socketUrl);
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            appendToLog("Connected: " + frame);
+
+            // Subscribe to topic /topic/scores to get score updates
+            stompClient.subscribe('/topic/scores', function (message) {
+                appendToLog("Message from server: " + message.body);
+            });
+        }, function (error) {
+            appendToLog("Error: " + error);
+        });
+    }
+
+    function sendMessage() {
+        const message = document.getElementById("message-to-send").value;
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/submit-answer", {}, message);
+            appendToLog("Message sent: " + message);
+        } else {
+            appendToLog("WebSocket is not connected.");
+        }
+    }
+
+    function appendToLog(message) {
+        const log = document.getElementById("server-responses");
+        const newMessage = document.createElement("p");
+        newMessage.textContent = message;
+        log.appendChild(newMessage);
+    }
+</script>
+</body>
+</html>

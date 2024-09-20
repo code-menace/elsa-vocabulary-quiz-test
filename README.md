@@ -1,4 +1,4 @@
-# Quiz Vocabulary App
+# Vocabulary Quiz App
 
 ### How to run app (assuming Linux/MacOS)
 
